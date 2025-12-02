@@ -1,0 +1,1357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="/Icon.jpeg" type="image/x-icon">
+
+    <title>PrysmLab - Unleash your creativity</title>
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --color-cream-50: #fcfcf9;
+            --color-cream-100: #fffffd;
+            --color-gray-200: #f5f5f5;
+            --color-slate-900: #13343b;
+            --color-teal-300: #32b8c6;
+            --color-teal-500: #21808d;
+            --color-charcoal-700: #1f2121;
+            --color-charcoal-800: #262828;
+            
+            --bg-cyan: rgba(165, 243, 252, 0.5);
+            --bg-orange: rgba(253, 186, 116, 0.3);
+            --bg-blue: rgba(191, 219, 254, 0.5);
+            --bg-pink: rgba(251, 207, 232, 0.3);
+            
+            --font-family-base: 'Berkeley Mono', 'Courier New', monospace;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-family-base);
+            background: linear-gradient(135deg, var(--bg-cyan) 0%, var(--bg-orange) 30%, var(--bg-blue) 60%, var(--bg-pink) 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .mac-window {
+            background: #e8e6e3;
+            border: 4px solid #000;
+            box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+
+        .mac-titlebar {
+            background: linear-gradient(to bottom, #d4d4d4 0%, #b8b8b8 100%);
+            border-bottom: 2px solid #000;
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .mac-buttons {
+            display: flex;
+            gap: 6px;
+        }
+
+        .mac-button {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            border: 2px solid #000;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .mac-button.close { background: #ff5f56; }
+        .mac-button.minimize { background: #ffbd2e; }
+        .mac-button.maximize { background: #27c93f; }
+        
+        .mac-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 8px currentColor;
+        }
+
+        .mac-title {
+            font-size: 11px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .mac-time {
+            font-size: 11px;
+            color: #666;
+        }
+
+        .app-container {
+            display: flex;
+            height: calc(100vh - 60px);
+            margin: 20px;
+        }
+
+        .sidebar {
+            width: 220px;
+            background: #2a2a2a;
+            border: 4px solid #000;
+            border-right: none;
+            color: white;
+            padding: 20px;
+            overflow-y: auto;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+            font-size: 13px;
+        }
+
+        .sidebar-item:hover {
+            background: #3a3a3a;
+            border-color: #555;
+        }
+
+        .sidebar-item.active {
+            background: #4a4a4a;
+            border-color: var(--color-teal-300);
+        }
+
+        .sidebar-icon {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+        }
+
+        .main-content {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.9);
+            border: 4px solid #000;
+            overflow-y: auto;
+            padding: 40px;
+        }
+
+        .search-container {
+            margin-bottom: 32px;
+        }
+
+        .search-box {
+            width: 100%;
+            max-width: 600px;
+            padding: 14px 20px;
+            border: 4px solid #000;
+            font-family: inherit;
+            font-size: 14px;
+            background: white;
+            box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.2);
+            transition: all 0.2s;
+        }
+
+        .search-box:focus {
+            outline: none;
+            box-shadow: 6px 6px 0 var(--color-teal-300);
+        }
+
+        .themes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 32px;
+            margin-top: 24px;
+        }
+
+        .theme-card {
+            background: white;
+            border: 4px solid #000;
+            box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .theme-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 12px 12px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        .theme-image-container {
+            width: 100%;
+            height: 260px;
+            overflow: hidden;
+            position: relative;
+            border-bottom: 4px solid #000;
+        }
+
+        .theme-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: opacity 0.3s;
+        }
+
+        .original-badge {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            background: #000;
+            color: white;
+            padding: 4px 12px;
+            font-size: 10px;
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .theme-card:hover .original-badge {
+            opacity: 1;
+        }
+
+        .theme-info {
+            padding: 16px;
+            background: #f5f5f5;
+        }
+
+        .theme-name {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 6px;
+            color: #000;
+        }
+
+        .theme-category {
+            font-size: 11px;
+            color: #666;
+        }
+
+        .like-button {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: rgba(255, 255, 255, 0.9);
+            border: 3px solid #000;
+            padding: 8px;
+            cursor: pointer;
+            z-index: 10;
+            transition: all 0.2s;
+            font-size: 18px;
+            line-height: 1;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .like-button:hover {
+            background: #ff6b9d;
+            transform: scale(1.1);
+        }
+
+        .like-button.liked {
+            background: #ff6b9d;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 100;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            max-width: 900px;
+            width: 100%;
+            max-height: 90vh;
+            overflow: hidden;
+        }
+
+        .modal-body {
+            background: white;
+            overflow-y: auto;
+            max-height: calc(90vh - 50px);
+            padding: 32px;
+        }
+
+        .before-after-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin: 24px 0;
+        }
+
+        .ba-label {
+            font-size: 11px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #666;
+        }
+
+        .ba-image-container {
+            border: 4px solid #000;
+            box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.2);
+        }
+
+        .ba-image {
+            width: 100%;
+            display: block;
+        }
+
+        .prompt-box {
+            background: #f5f5f5;
+            border: 4px solid #000;
+            padding: 20px;
+            margin: 24px 0;
+            box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.2);
+        }
+
+        .prompt-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .prompt-text {
+            font-size: 13px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: 4px solid #000;
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.3);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        .btn-primary {
+            background: var(--color-teal-300);
+            color: #000;
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #000;
+        }
+
+        .btn-gemini {
+            background: #000;
+            color: white;
+            width: 100%;
+            justify-content: center;
+            margin-top: 16px;
+        }
+
+        .playground-container {
+            max-width: 1000px;
+        }
+
+        .upload-zone {
+            border: 4px dashed #000;
+            padding: 60px 40px;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 32px;
+        }
+
+        .upload-zone:hover {
+            background: rgba(255, 255, 255, 0.8);
+            border-color: var(--color-teal-300);
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .tool-btn {
+            padding: 24px;
+            border: 4px solid #000;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .tool-btn:hover {
+            background: var(--color-teal-300);
+            transform: translateY(-4px);
+        }
+
+        .canvas-area {
+            border: 4px solid #000;
+            background: white;
+            min-height: 400px;
+            padding: 20px;
+            position: relative;
+        }
+
+        .uploaded-images-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .uploaded-image-card {
+            border: 4px solid #000;
+            position: relative;
+            box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.2);
+        }
+
+        .uploaded-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .remove-image-btn {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #ff5f56;
+            color: white;
+            border: 3px solid #000;
+            width: 32px;
+            height: 32px;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .uploaded-image-card:hover .remove-image-btn {
+            display: flex;
+        }
+
+        .auth-modal {
+            padding: 32px;
+        }
+
+        .auth-form {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .form-input {
+            padding: 12px;
+            border: 4px solid #000;
+            font-family: inherit;
+            font-size: 14px;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--color-teal-300);
+        }
+
+        .user-badge {
+            background: white;
+            border: 3px solid #000;
+            padding: 8px 16px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 20px;
+            cursor: pointer;
+        }
+
+        .user-avatar {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--color-teal-300);
+            border: 2px solid #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .auth-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+        }
+
+        .auth-tab {
+            flex: 1;
+            padding: 12px;
+            border: 4px solid #000;
+            background: white;
+            cursor: pointer;
+            text-align: center;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        .auth-tab.active {
+            background: var(--color-teal-300);
+        }
+
+        .logout-btn {
+            padding: 8px 16px;
+            border: 3px solid #000;
+            background: #ff5f56;
+            color: white;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: bold;
+            margin-left: auto;
+        }
+
+        @media (max-width: 768px) {
+            .app-container {
+                flex-direction: column;
+                margin: 10px;
+            }
+            
+            .sidebar {
+                width: 100%;
+                border-right: 4px solid #000;
+                border-bottom: none;
+                padding: 15px;
+            }
+
+            .main-content {
+                padding: 20px;
+            }
+            
+            .before-after-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .themes-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--color-teal-300);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 40px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        h2 {
+            font-size: 24px;
+            margin-bottom: 24px;
+            color: #000;
+        }
+
+        .tag {
+            display: inline-block;
+            background: #000;
+            color: white;
+            padding: 4px 12px;
+            font-size: 11px;
+            margin-bottom: 16px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+        }
+
+        .notification {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            background: white;
+            border: 4px solid #000;
+            padding: 16px 24px;
+            box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(400px); }
+            to { transform: translateX(0); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Mac Title Bar -->
+    <div class="mac-window" style="border-bottom: none;">
+        <div class="mac-titlebar">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div class="mac-buttons">
+                    <div class="mac-button close"></div>
+                    <div class="mac-button minimize"></div>
+                    <div class="mac-button maximize"></div>
+                </div>
+                <span class="mac-title">PrysmLab - Unleash your creativity</span>
+            </div>
+            <span class="mac-time" id="currentTime"></span>
+        </div>
+    </div>
+
+    <!-- App Container -->
+    <div class="app-container">
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-item active" data-tab="gallery">
+                <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                </svg>
+                <span>Gallery</span>
+            </div>
+            <div class="sidebar-item" data-tab="playground">
+                <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 5v14M5 12h14"></path>
+                </svg>
+                <span>Playground</span>
+            </div>
+            <div class="sidebar-item" data-tab="liked">
+                <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                </svg>
+                <span>Liked (<span id="likedCount">0</span>)</span>
+            </div>
+
+            <div id="userBadge" class="user-badge hidden">
+                <div class="user-avatar" id="userAvatar"></div>
+                <span id="userName"></span>
+                <button class="logout-btn" onclick="logout()">Logout</button>
+            </div>
+
+            <div class="sidebar-item" data-tab="auth" id="authBtn">
+                <svg class="sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+                <span>Login / Sign Up</span>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Gallery Tab -->
+            <div id="galleryTab" class="tab-content">
+                <h2>🎨 Browse Themes</h2>
+                <div class="search-container">
+                    <input type="text" class="search-box" id="searchBox" placeholder="Search themes...">
+                </div>
+                <div id="themesGrid" class="themes-grid">
+                    <div class="spinner"></div>
+                </div>
+            </div>
+
+            <!-- Playground Tab -->
+            <div id="playgroundTab" class="tab-content hidden">
+                <div class="playground-container">
+                    <h2>🛠️ Image Playground</h2>
+                    
+                    <div class="upload-zone" id="uploadZone">
+                        <div class="upload-icon">📤</div>
+                        <p style="font-size: 14px; font-weight: bold; margin-bottom: 8px;">Drop images here</p>
+                        <p style="font-size: 12px; color: #666;">or click to upload</p>
+                        <input type="file" id="fileInput" multiple accept="image/*" style="display: none;">
+                    </div>
+
+                    <div class="tools-grid">
+                        <button class="tool-btn" id="removeBgBtn">
+                            <div style="font-size: 32px; margin-bottom: 8px;">✂️</div>
+                            <div style="font-size: 12px; font-weight: bold;">Remove BG</div>
+                        </button>
+                        <button class="tool-btn" id="overlayBtn">
+                            <div style="font-size: 32px; margin-bottom: 8px;">🔲</div>
+                            <div style="font-size: 12px; font-weight: bold;">Overlay</div>
+                        </button>
+                        <button class="tool-btn" id="filterBtn">
+                            <div style="font-size: 32px; margin-bottom: 8px;">🎨</div>
+                            <div style="font-size: 12px; font-weight: bold;">Filters</div>
+                        </button>
+                        <button class="tool-btn" id="clearBtn">
+                            <div style="font-size: 32px; margin-bottom: 8px;">🗑️</div>
+                            <div style="font-size: 12px; font-weight: bold;">Clear All</div>
+                        </button>
+                    </div>
+
+                    <div class="canvas-area">
+                        <div id="uploadedImagesGrid" class="uploaded-images-grid"></div>
+                        <div id="playgroundEmpty" class="empty-state">
+                            <div class="empty-state-icon">🖼️</div>
+                            <p>No images yet. Upload some to get started!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Liked Tab -->
+            <div id="likedTab" class="tab-content hidden">
+                <h2>❤️ Liked Themes</h2>
+                <div id="likedGrid" class="themes-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Theme Modal -->
+    <div class="modal-overlay" id="themeModal">
+        <div class="modal-content mac-window">
+            <div class="mac-titlebar">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div class="mac-buttons">
+                        <div class="mac-button close" id="closeModal"></div>
+                        <div class="mac-button minimize"></div>
+                        <div class="mac-button maximize"></div>
+                    </div>
+                    <span class="mac-title" id="modalTitle"></span>
+                </div>
+            </div>
+            <div class="modal-body" id="modalBody"></div>
+        </div>
+    </div>
+
+    <!-- Auth Modal -->
+    <div class="modal-overlay" id="authModal">
+        <div class="modal-content mac-window">
+            <div class="mac-titlebar">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div class="mac-buttons">
+                        <div class="mac-button close" id="closeAuthModal"></div>
+                        <div class="mac-button minimize"></div>
+                        <div class="mac-button maximize"></div>
+                    </div>
+                    <span class="mac-title">Authentication</span>
+                </div>
+            </div>
+            <div class="auth-modal">
+                <div class="auth-tabs">
+                    <button class="auth-tab active" data-mode="signup">Sign Up</button>
+                    <button class="auth-tab" data-mode="login">Login</button>
+                </div>
+                
+                <!-- Sign Up Form -->
+                <form class="auth-form" id="signupForm">
+                    <h2 style="text-align: center; margin-bottom: 16px;">Create Account 🎨</h2>
+                    <input type="text" class="form-input" id="signupUsername" placeholder="Username" required>
+                    <input type="email" class="form-input" id="signupEmail" placeholder="Email" required>
+                    <input type="password" class="form-input" id="signupPassword" placeholder="Password (min 6 chars)" required minlength="6">
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">Create Account</button>
+                </form>
+
+                <!-- Login Form -->
+                <form class="auth-form hidden" id="loginForm">
+                    <h2 style="text-align: center; margin-bottom: 16px;">Welcome Back! 👋</h2>
+                    <input type="email" class="form-input" id="loginEmail" placeholder="Email" required>
+                    <input type="password" class="form-input" id="loginPassword" placeholder="Password" required>
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">Login</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Supabase Configuration
+        const SUPABASE_URL = 'https://ehnbjlpnirhensrypezf.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVobmJqbHBuaXJoZW5zcnlwZXpmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ2NTc4NDMsImV4cCI6MjA4MDIzMzg0M30.vWEUVY4yV3K45P4O_TqV3A3gd52nYrIc4PAAXeSdCh8';
+        const { createClient } = supabase;
+        const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // State
+        let themesData = [];
+        let likedThemes = new Set();
+        let currentUser = null;
+        let uploadedImages = [];
+
+        // Show notification
+        function showNotification(message, duration = 3000) {
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), duration);
+        }
+
+        // Initialize auth state
+        async function initAuth() {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (session) {
+                currentUser = session.user;
+                await loadUserProfile();
+                await loadLikedThemes();
+            }
+        }
+
+        // Load user profile
+        async function loadUserProfile() {
+            const { data, error } = await supabaseClient
+                .from('profiles')
+                .select('*')
+                .eq('id', currentUser.id)
+                .single();
+
+            if (data) {
+                document.getElementById('userAvatar').textContent = data.username[0].toUpperCase();
+                document.getElementById('userName').textContent = data.username;
+                document.getElementById('userBadge').classList.remove('hidden');
+                document.getElementById('authBtn').classList.add('hidden');
+            }
+        }
+
+        // Load liked themes from database
+        async function loadLikedThemes() {
+            if (!currentUser) {
+                likedThemes.clear();
+                updateLikedCount();
+                return;
+            }
+
+            const { data, error } = await supabaseClient
+                .from('liked_themes')
+                .select('theme_name')
+                .eq('user_id', currentUser.id);
+
+            if (data) {
+                likedThemes = new Set(data.map(item => item.theme_name));
+                updateLikedCount();
+                renderThemes();
+            }
+        }
+
+        // Load themes from JSON
+        async function loadThemesData() {
+            try {
+                const response = await fetch('themes.json');
+                const data = await response.json();
+                
+                themesData = [];
+                Object.keys(data).forEach(categoryKey => {
+                    if (Array.isArray(data[categoryKey])) {
+                        themesData.push(...data[categoryKey]);
+                    }
+                });
+                
+                renderThemes();
+            } catch (error) {
+                console.error('Error loading themes:', error);
+                document.getElementById('themesGrid').innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">⚠️</div>
+                        <p>Failed to load themes. Make sure themes.json is in the same directory.</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Get image paths
+        function getOriginalImage(theme) {
+            if (!theme.scraped_data || !theme.scraped_data.downloaded_images) return null;
+            const original = theme.scraped_data.downloaded_images.find(img => img.type === 'original' && img.index === 1);
+            return original ? original.local_path : null;
+        }
+
+        function getGeneratedImage(theme) {
+            if (!theme.scraped_data || !theme.scraped_data.downloaded_images) return null;
+            const generated = theme.scraped_data.downloaded_images.find(img => img.type === 'generated' && img.index === 1);
+            return generated ? generated.local_path : null;
+        }
+
+        // Render themes
+        function renderThemes(filter = '') {
+            const grid = document.getElementById('themesGrid');
+            const filteredThemes = themesData.filter(theme => 
+                theme.style_name.toLowerCase().includes(filter.toLowerCase()) ||
+                theme.category.toLowerCase().includes(filter.toLowerCase())
+            );
+
+            if (filteredThemes.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🔍</div>
+                        <p>No themes found matching "${filter}"</p>
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = filteredThemes.map((theme, idx) => {
+                const originalImg = getOriginalImage(theme);
+                const generatedImg = getGeneratedImage(theme);
+                
+                if (!generatedImg) return '';
+
+                return `
+                    <div class="theme-card" data-index="${themesData.indexOf(theme)}">
+                        <button class="like-button ${likedThemes.has(theme.style_name) ? 'liked' : ''}" onclick="toggleLike('${theme.style_name.replace(/'/g, "\\'")}', event)">
+                            ${likedThemes.has(theme.style_name) ? '❤️' : '🤍'}
+                        </button>
+                        <div class="theme-image-container">
+                            <img src="${generatedImg}" 
+                                 alt="${theme.style_name}" 
+                                 class="theme-image" 
+                                 data-generated="${generatedImg}" 
+                                 data-original="${originalImg || generatedImg}"
+                                 onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect fill=%22%23ddd%22 width=%22400%22 height=%22300%22/%3E%3Ctext fill=%22%23999%22 font-family=%22monospace%22 font-size=%2216%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dominant-baseline=%22middle%22%3EImage not found%3C/text%3E%3C/svg%3E'">
+                            <div class="original-badge">ORIGINAL</div>
+                        </div>
+                        <div class="theme-info">
+                            <div class="theme-name">${theme.style_name}</div>
+                            <div class="theme-category">${theme.category}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Add hover effects
+            document.querySelectorAll('.theme-card').forEach(card => {
+                const img = card.querySelector('.theme-image');
+                const original = img.dataset.original;
+                const generated = img.dataset.generated;
+
+                card.addEventListener('mouseenter', () => {
+                    if (original && original !== generated) {
+                        img.src = original;
+                    }
+                });
+
+                card.addEventListener('mouseleave', () => {
+                    img.src = generated;
+                });
+
+                card.addEventListener('click', (e) => {
+                    if (!e.target.classList.contains('like-button')) {
+                        showThemeModal(card.dataset.index);
+                    }
+                });
+            });
+        }
+
+        // Toggle like with database
+        async function toggleLike(themeName, event) {
+            event.stopPropagation();
+
+            if (!currentUser) {
+                showNotification('Please login to like themes!');
+                document.getElementById('authModal').classList.add('active');
+                return;
+            }
+
+            if (likedThemes.has(themeName)) {
+                const { error } = await supabaseClient
+                    .from('liked_themes')
+                    .delete()
+                    .eq('user_id', currentUser.id)
+                    .eq('theme_name', themeName);
+
+                if (!error) {
+                    likedThemes.delete(themeName);
+                    showNotification('Removed from liked themes');
+                }
+            } else {
+                const { error } = await supabaseClient
+                    .from('liked_themes')
+                    .insert({ user_id: currentUser.id, theme_name: themeName });
+
+                if (!error) {
+                    likedThemes.add(themeName);
+                    showNotification('Added to liked themes ❤️');
+                }
+            }
+
+            renderThemes(document.getElementById('searchBox').value);
+            renderLikedThemes();
+            updateLikedCount();
+        }
+
+        // Show theme modal
+        function showThemeModal(index) {
+            const theme = themesData[index];
+            const modal = document.getElementById('themeModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalBody = document.getElementById('modalBody');
+
+            const originalImg = getOriginalImage(theme);
+            const generatedImg = getGeneratedImage(theme);
+
+            modalTitle.textContent = theme.style_name;
+            modalBody.innerHTML = `
+                <h2>${theme.style_name}</h2>
+                <span class="tag">${theme.category}</span>
+                
+                <div class="before-after-grid">
+                    <div>
+                        <div class="ba-label">BEFORE</div>
+                        <div class="ba-image-container">
+                            <img src="${originalImg || generatedImg}" class="ba-image"
+                                 onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect fill=%22%23ddd%22 width=%22400%22 height=%22300%22/%3E%3Ctext fill=%22%23999%22 font-family=%22monospace%22 font-size=%2216%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dominant-baseline=%22middle%22%3EOriginal not found%3C/text%3E%3C/svg%3E'">
+                        </div>
+                    </div>
+                    <div>
+                        <div class="ba-label">AFTER</div>
+                        <div class="ba-image-container">
+                            <img src="${generatedImg}" class="ba-image"
+                                 onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect fill=%22%23ddd%22 width=%22400%22 height=%22300%22/%3E%3Ctext fill=%22%23999%22 font-family=%22monospace%22 font-size=%2216%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dominant-baseline=%22middle%22%3EGenerated not found%3C/text%3E%3C/svg%3E'">
+                        </div>
+                    </div>
+                </div>
+
+                ${theme.scraped_data && theme.scraped_data.prompt ? `
+                    <div class="prompt-box">
+                        <div class="prompt-header">
+                            <div style="font-size: 11px; font-weight: bold;">PROMPT</div>
+                            <button class="btn btn-secondary" onclick="copyPrompt(\`${theme.scraped_data.prompt.replace(/`/g, '\\`')}\`)">
+                                📋 COPY
+                            </button>
+                        </div>
+                        <div class="prompt-text">${theme.scraped_data.prompt}</div>
+                    </div>
+
+                    <button class="btn btn-gemini" onclick="openInGemini(\`${theme.scraped_data.prompt.replace(/`/g, '\\`')}\`)">
+                        ✨ TRY IN GEMINI
+                    </button>
+                ` : ''}
+            `;
+
+            modal.classList.add('active');
+        }
+
+        // Copy prompt
+        function copyPrompt(prompt) {
+            navigator.clipboard.writeText(prompt);
+            showNotification('Prompt copied to clipboard! ✅');
+        }
+
+        // Open in Gemini
+        function openInGemini(prompt) {
+            const encodedPrompt = encodeURIComponent(prompt);
+            window.open(`https://gemini.google.com/?prompt=${encodedPrompt}`, '_blank');
+        }
+
+        // Render liked themes
+        function renderLikedThemes() {
+            const grid = document.getElementById('likedGrid');
+            const liked = themesData.filter(theme => likedThemes.has(theme.style_name));
+
+            if (liked.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">💔</div>
+                        <p>No liked themes yet. Heart some themes to see them here!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = liked.map(theme => {
+                const generatedImg = getGeneratedImage(theme);
+                return `
+                    <div class="theme-card" onclick="showThemeModal(${themesData.indexOf(theme)})">
+                        <div class="theme-image-container">
+                            <img src="${generatedImg}" alt="${theme.style_name}" class="theme-image">
+                        </div>
+                        <div class="theme-info">
+                            <div class="theme-name">${theme.style_name}</div>
+                            <div class="theme-category">${theme.category}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Update liked count
+        function updateLikedCount() {
+            document.getElementById('likedCount').textContent = likedThemes.size;
+        }
+
+        // Auth: Sign Up
+        document.getElementById('signupForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('signupUsername').value;
+            const email = document.getElementById('signupEmail').value;
+            const password = document.getElementById('signupPassword').value;
+
+            const { data, error } = await supabaseClient.auth.signUp({
+                email: email,
+                password: password,
+                options: {
+                    data: { username: username }
+                }
+            });
+
+            if (error) {
+                showNotification('Error: ' + error.message);
+                return;
+            }
+
+            if (data.user) {
+                showNotification('Account created! Check your email to verify. 📧');
+                document.getElementById('authModal').classList.remove('active');
+                document.getElementById('signupForm').reset();
+            }
+        });
+
+        // Auth: Login
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+
+            const { data, error } = await supabaseClient.auth.signInWithPassword({
+                email: email,
+                password: password
+            });
+
+            if (error) {
+                showNotification('Login failed: ' + error.message);
+                return;
+            }
+
+            currentUser = data.user;
+            await loadUserProfile();
+            await loadLikedThemes();
+            document.getElementById('authModal').classList.remove('active');
+            document.getElementById('loginForm').reset();
+            showNotification('Welcome back! 🎨');
+        });
+
+        // Logout
+        async function logout() {
+            await supabaseClient.auth.signOut();
+            currentUser = null;
+            likedThemes.clear();
+            document.getElementById('userBadge').classList.add('hidden');
+            document.getElementById('authBtn').classList.remove('hidden');
+            updateLikedCount();
+            renderThemes();
+            showNotification('Logged out successfully');
+        }
+
+        // Auth tab switching
+        document.querySelectorAll('.auth-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                const mode = tab.dataset.mode;
+                if (mode === 'signup') {
+                    document.getElementById('signupForm').classList.remove('hidden');
+                    document.getElementById('loginForm').classList.add('hidden');
+                } else {
+                    document.getElementById('loginForm').classList.remove('hidden');
+                    document.getElementById('signupForm').classList.add('hidden');
+                }
+            });
+        });
+
+        // Listen for auth changes
+        supabaseClient.auth.onAuthStateChange((event, session) => {
+            if (event === 'SIGNED_IN') {
+                currentUser = session.user;
+                loadUserProfile();
+                loadLikedThemes();
+            } else if (event === 'SIGNED_OUT') {
+                currentUser = null;
+                likedThemes.clear();
+                updateLikedCount();
+                renderThemes();
+            }
+        });
+
+        // Tab switching
+        document.querySelectorAll('.sidebar-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const tab = item.dataset.tab;
+                
+                if (tab === 'auth') {
+                    document.getElementById('authModal').classList.add('active');
+                    return;
+                }
+
+                document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+
+                document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
+                document.getElementById(`${tab}Tab`).classList.remove('hidden');
+
+                if (tab === 'liked') {
+                    renderLikedThemes();
+                }
+            });
+        });
+
+        // Playground
+        const uploadZone = document.getElementById('uploadZone');
+        const fileInput = document.getElementById('fileInput');
+
+        uploadZone.addEventListener('click', () => fileInput.click());
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.style.borderColor = 'var(--color-teal-300)';
+        });
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.style.borderColor = '#000';
+        });
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.style.borderColor = '#000';
+            handleFiles(e.dataTransfer.files);
+        });
+
+        fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+
+        function handleFiles(files) {
+            Array.from(files).forEach(file => {
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        uploadedImages.push({
+                            id: Date.now() + Math.random(),
+                            src: e.target.result,
+                            name: file.name
+                        });
+                        renderUploadedImages();
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+
+        function renderUploadedImages() {
+            const grid = document.getElementById('uploadedImagesGrid');
+            const empty = document.getElementById('playgroundEmpty');
+            
+            if (uploadedImages.length === 0) {
+                empty.style.display = 'block';
+                grid.style.display = 'none';
+                return;
+            }
+
+            empty.style.display = 'none';
+            grid.style.display = 'grid';
+            grid.innerHTML = uploadedImages.map(img => `
+                <div class="uploaded-image-card">
+                    <img src="${img.src}" class="uploaded-image">
+                    <button class="remove-image-btn" onclick="removeImage('${img.id}')">✕</button>
+                </div>
+            `).join('');
+        }
+
+        function removeImage(id) {
+            uploadedImages = uploadedImages.filter(img => img.id !== parseFloat(id));
+            renderUploadedImages();
+        }
+
+        document.getElementById('clearBtn').addEventListener('click', () => {
+            if (uploadedImages.length > 0 && confirm('Clear all images?')) {
+                uploadedImages = [];
+                renderUploadedImages();
+            }
+        });
+
+        ['removeBgBtn', 'overlayBtn', 'filterBtn'].forEach(id => {
+            document.getElementById(id).addEventListener('click', () => {
+                showNotification('Feature coming soon! 🚀');
+            });
+        });
+
+        // Search
+        document.getElementById('searchBox').addEventListener('input', (e) => {
+            renderThemes(e.target.value);
+        });
+
+        // Modal controls
+        document.getElementById('closeModal').addEventListener('click', () => {
+            document.getElementById('themeModal').classList.remove('active');
+        });
+
+        document.getElementById('closeAuthModal').addEventListener('click', () => {
+            document.getElementById('authModal').classList.remove('active');
+        });
+
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) {
+                    overlay.classList.remove('active');
+                }
+            });
+        });
+
+        // Update time
+        function updateTime() {
+            const now = new Date();
+            const options = { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true };
+            document.getElementById('currentTime').textContent = now.toLocaleString('en-US', options);
+        }
+
+        // Initialize
+        async function init() {
+            updateTime();
+            setInterval(updateTime, 60000);
+            await initAuth();
+            loadThemesData();
+        }
+
+        init();
+    </script>
+</body>
+</html>
